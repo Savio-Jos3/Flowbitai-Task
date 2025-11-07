@@ -1,11 +1,3 @@
-You are right, my apologies. The last version was a merge, but this one will be a complete, single file integrating all your specific text with the upgraded, filled-out sections.
-
-This version includes your Table of Contents, your exact Overview and Architecture text, and all the "upgraded" elements (badges, demo links, detailed API docs, and setup steps) in one final README.md file.
-
-Here is the complete, combined file.
-
-Markdown
-
 # 📊 Flowbit AI - Full-Stack Invoice Analytics
 
 A full-stack web app for managing, analyzing, and interacting with invoice documents. Built for the Flowbit Private Limited internship assessment.
@@ -63,11 +55,13 @@ This project features an interactive analytics dashboard and a "Chat with Data" 
 ## 🚀 Live Demo & Video
 
 ### Deployed URLs
+
 * **Frontend (Vercel):** [**https://<your-app-name>.vercel.app**](https://<your-app-name>.vercel.app)
 * **Backend API (Vercel):** [**https://<your-app-name>.vercel.app/api**](https://<your-app-name>.vercel.app/api)
 * **Vanna AI (Render):** [**https://<your-vanna-service>.onrender.com**](https://<your-vanna-service>.onrender.com)
 
 ### 🎬 Demo Video
+
 A 3-5 minute walkthrough of the application, from the dashboard to the "Chat with Data" feature.
 
 [**Watch the Demo Video Here**](https://www.loom.com/...) _<-- (Add your Loom or YouTube link here)_
@@ -97,6 +91,7 @@ A 3-5 minute walkthrough of the application, from the dashboard to the "Chat wit
 ## 🏛️ Architecture & Workflow
 
 ### Project Workflow
+
 This describes the full data lifecycle, from upload to analytics.
 
 * **1. Upload:** User uploads invoice (e.g., PDF).
@@ -109,6 +104,7 @@ This describes the full data lifecycle, from upload to analytics.
 **Key entities:** `Documents`, `Invoices`, `Vendors`, `Customers`, `Payments`, `Line Items`, `Invoice Summary`.
 
 ### "Chat with Data" Flow
+
 This diagram illustrates how a natural language query is processed by the system.
 
 
@@ -127,12 +123,14 @@ This diagram illustrates how a natural language query is processed by the system
 ## 🗄️ Database Schema
 
 ### Entity-Relationship Diagram (ERD)
+
 An ERD showing the normalized table structure. The design separates invoices from their related entities like vendors, customers, payments, and line items for data integrity.
 
 
 _**(Add your ERD image here. You can create one on dbdiagram.io)**_
 
 ### DBML (Database Markup Language)
+
 Below is the DBML code used to generate the schema.
 
 ```dbml
@@ -208,211 +206,33 @@ Table invoice_summary {
   currency_symbol varchar
 }
 
-🚀 Getting Started
-Prerequisites
-Node.js v18+
+## 🚀 Getting Started
 
-pnpm
+### Prerequisites
 
-Docker (for PostgreSQL, optional)
+* Node.js v18+
+* pnpm
+* Docker (for PostgreSQL, optional)
+* Python 3.10+
+* A Groq API Key
 
-Python 3.10+
+### 1. Clone the Repository
 
-A Groq API Key
-
-1. Clone the Repository
-Bash
-
+```bash
 git clone [https://github.com/](https://github.com/)<your-username>/<your-repo-name>.git
 cd <your-repo-name>
-2. Install Dependencies
-Bash
 
+### 2. Install dependencies
+
+```bash
 pnpm install
-3. Set Up Environment Variables
+
+### 3. Set Up Environment Variables
 Create .env files in the respective packages. Start with /apps/api/.env.example, /apps/web/.env.example, and /services/vanna/.env.example.
-
-Backend (/apps/api/.env)
-
-Bash
-
+###Backend (/apps/api/.env)
+```bash
 # PostgreSQL connection string
 DATABASE_URL="postgresql://user:pass@host:5432/dbname"
 
 # URL of your deployed Vanna service
 VANNA_API_BASE_URL="http://localhost:8000" # (Update to Render URL when deployed)
-Vanna AI (/services/vanna/.env)
-
-Bash
-
-# Must use psycopg protocol for Vanna
-DATABASE_URL="postgresql+psycopg://user:pass@host:5432/dbname"
-GROQ_API_KEY="sk-..."
-PORT=8000
-4. Set Up and Seed the Database
-Start your PostgreSQL server (e.g., via Docker).
-
-Run the Prisma migrations to create the tables:
-
-Bash
-
-pnpm --filter=api run db:migrate
-Run the seed script to ingest data from Analytics_Test_Data.json:
-
-Bash
-
-pnpm --filter=api run db:seed
-5. Run the Application
-This will start the entire monorepo (frontend, backend, and AI service).
-
-Bash
-
-pnpm dev
-Frontend will be available at http://localhost:3000
-
-Backend API will be available at http://localhost:3001
-
-Vanna AI Service will be available at http://localhost:8000
-
-📚 API Documentation
-Base URL: /api
-📊 Dashboard Stats
-Endpoint: /stats
-
-Method: GET
-
-Description: Returns totals for the overview cards.
-
-Example Response:
-
-JSON
-
-{
-  "total_spend_ytd": 125000.00,
-  "total_invoices_processed": 1500,
-  "documents_uploaded": 500,
-  "average_invoice_value": 83.33
-}
-📈 Invoice Trends
-Endpoint: /invoice-trends
-
-Method: GET
-
-Description: Returns data for the "Invoice Volume + Value Trend" line chart.
-
-Example Response:
-
-JSON
-
-[
-  { "month": "Jan", "volume": 100, "value": 10000 },
-  { "month": "Feb", "volume": 120, "value": 12000 },
-  { "month": "Mar", "volume": 110, "value": 11000 }
-]
-🏢 Top Vendors
-Endpoint: /vendors/top10
-
-Method: GET
-
-Description: Returns the top 10 vendors by total spend.
-
-Example Response:
-
-JSON
-
-[
-  { "vendor_name": "Vendor A", "spend": 25000 },
-  { "vendor_name": "Vendor B", "spend": 18000 }
-]
-🥧 Spend by Category
-Endpoint: /category-spend
-
-Method: GET
-
-Description: Returns total spend grouped by line_item category.
-
-Example Response:
-
-JSON
-
-[
-  { "category": "Software", "spend": 30000 },
-  { "category": "Hardware", "spend": 45000 },
-  { "category": "Marketing", "spend": 15000 }
-]
-💸 Cash Outflow
-Endpoint: /cash-outflow
-
-Method: GET
-
-Description: Returns data for the cash outflow forecast bar chart.
-
-Example Response:
-
-JSON
-
-[
-  { "date": "2025-11-10", "amount_due": 5000 },
-  { "date": "2025-11-15", "amount_due": 8000 }
-]
-📄 Invoices Table
-Endpoint: /invoices
-
-Method: GET
-
-Description: Returns a paginated, searchable list of invoices.
-
-Query Params: ?page=1&limit=10&search=...&sortBy=date&order=desc
-
-Example Response:
-
-JSON
-
-{
-  "data": [
-    {
-      "id": "uuid-...",
-      "vendor_name": "Vendor C",
-      "date": "2025-11-01",
-      "invoice_number": "INV-1001",
-      "amount": 150.00,
-      "status": "Paid"
-    }
-  ],
-  "total_count": 1500
-}
-💬 Chat with Data
-Endpoint: /chat-with-data
-
-Method: POST
-
-Description: Forwards a natural language query to the Vanna AI service.
-
-Body:
-
-JSON
-
-{
-  "query": "What's the total spend in the last 90 days?"
-}
-Example Response:
-
-JSON
-
-{
-  "sql_query": "SELECT SUM(total_price) FROM line_items WHERE invoice_id IN (SELECT id FROM invoices WHERE invoice_date >= NOW() - INTERVAL '90 days')",
-  "results": [
-    { "sum": 25000.00 }
-  ],
-  "chart_suggestion": null
-}
-🏆 Bonus & Improvements
-This section details any enhancements made beyond the baseline requirements.
-
-[ ] Persistent Chat History: (e.g., saving chats to the DB)
-
-[ ] CSV / Excel Export: (e.g., for the invoices table)
-
-[ ] Unit Tests: (e.g., using Jest for API endpoints)
-
-[ ] Docker Compose: (e.g., docker-compose.yml for a one-command local setup)
