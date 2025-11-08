@@ -1,0 +1,80 @@
+// schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Vendor {
+  id           String   @id @default(uuid())
+  name         String
+  taxId        String?
+  address      String?
+  partyNumber  String?
+  invoices     Invoice[]
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  invoices  Invoice[]
+}
+
+model Invoice {
+  id            String   @id @default(uuid())
+  invoiceNumber String
+  vendorId      String
+  customerId    String
+  invoiceDate   DateTime?
+  deliveryDate  DateTime?
+  status        String?
+  documentId    String?
+  
+  Vendor        Vendor          @relation(fields: [vendorId], references: [id])
+  Customer      Customer        @relation(fields: [customerId], references: [id])
+  lineItems     LineItem[]
+  payments      Payment[]       // one-to-many
+  summaries     InvoiceSummary[] // one-to-many
+}
+
+model LineItem {
+  id           String   @id @default(uuid())
+  invoiceId    String
+  srNo         Int
+  description  String?
+  quantity     Float
+  unitPrice    Float
+  totalPrice   Float
+  sachkonto    String?
+  buschluessel String?
+  
+  Invoice      Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+model Payment {
+  id               String   @id @default(uuid())
+  invoiceId        String
+  paymentDate      DateTime?
+  amount           Float?
+  bankAccount      String?
+  bic              String?
+  paymentTerms     String?
+  
+  Invoice          Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+model InvoiceSummary {
+  id             String   @id @default(uuid())
+  invoiceId      String
+  subtotal       Float?
+  totalTax       Float?
+  invoiceTotal   Float?
+  currencySymbol String?
+  
+  Invoice        Invoice @relation(fields: [invoiceId], references: [id])
+}
