@@ -12,7 +12,7 @@ generator client {
 model Vendor {
   id           String   @id @default(uuid())
   name         String
-  taxId        String?
+  taxId        String?   // vendorTaxId
   address      String?
   partyNumber  String?
   invoices     Invoice[]
@@ -22,6 +22,7 @@ model Customer {
   id        String   @id @default(uuid())
   name      String
   address   String?
+  taxId     String?    // new: for customerTaxId (appears in JSON)
   invoices  Invoice[]
 }
 
@@ -32,9 +33,10 @@ model Invoice {
   customerId    String
   invoiceDate   DateTime?
   deliveryDate  DateTime?
+  invoiceTotal  Float? 
   status        String?
   documentId    String?
-  
+
   Vendor        Vendor          @relation(fields: [vendorId], references: [id])
   Customer      Customer        @relation(fields: [customerId], references: [id])
   lineItems     LineItem[]
@@ -52,7 +54,9 @@ model LineItem {
   totalPrice   Float
   sachkonto    String?
   buschluessel String?
-  
+  vatRate      Float?    // new: for item vatRate
+  vatAmount    Float?    // new: for item vatAmount
+
   Invoice      Invoice @relation(fields: [invoiceId], references: [id])
 }
 
@@ -64,7 +68,13 @@ model Payment {
   bankAccount      String?
   bic              String?
   paymentTerms     String?
-  
+  netDays          Int?      // new: netDays from JSON
+  discountPercentage Float?  // new: discountPercentage from JSON
+  discountDays     Int?      // new: discountDays from JSON
+  discountDueDate  DateTime? // new: discountDueDate from JSON
+  discountedTotal  Float?    // new: discountedTotal from JSON
+  accountName      String?   // new: accountName from JSON
+
   Invoice          Invoice @relation(fields: [invoiceId], references: [id])
 }
 
@@ -75,6 +85,18 @@ model InvoiceSummary {
   totalTax       Float?
   invoiceTotal   Float?
   currencySymbol String?
-  
+  documentType   String?   // new: for documentType from JSON
+  locale         String?   // new: for locale from JSON
+
   Invoice        Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // hashed password
+  name      String?
+  role      String   @default("user") // e.g., "user", "admin"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
