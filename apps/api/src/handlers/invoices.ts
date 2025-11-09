@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import prisma from '../lib/prisma';
 
-// Define validation schema
 const invoiceQuerySchema = z.object({
   search: z.string().trim().optional(),
   status: z.string().trim().optional(),
@@ -16,7 +15,6 @@ const invoiceQuerySchema = z.object({
 
 export async function listInvoices(req: Request, res: Response, next: NextFunction) {
   try {
-    // Validate and parse query parameters
     const validationResult = invoiceQuerySchema.safeParse(req.query);
     
     if (!validationResult.success) {
@@ -29,22 +27,18 @@ export async function listInvoices(req: Request, res: Response, next: NextFuncti
 
     const { search, status, dateFrom, dateTo, vendorId, customerId, page, pageSize } = validationResult.data;
 
-    // Build where clause
     const where: any = {};
 
-    // Free-text search (invoice number)
     if (search) {
       where.OR = [
         { invoiceNumber: { contains: search, mode: 'insensitive' } }
       ];
     }
 
-    // Filter by status
     if (status) {
       where.status = status;
     }
 
-    // Filter by date range
     if (dateFrom || dateTo) {
       where.invoiceDate = {};
       if (dateFrom) {
@@ -69,21 +63,17 @@ export async function listInvoices(req: Request, res: Response, next: NextFuncti
       }
     }
 
-    // Filter by vendor
     if (vendorId) {
       where.vendorId = vendorId;
     }
 
-    // Filter by customer
     if (customerId) {
       where.customerId = customerId;
     }
 
-    // Calculate pagination
     const skip = (page - 1) * pageSize;
     const take = pageSize;
 
-    // Fetch invoices and total count in a transaction
     const [invoices, total] = await prisma.$transaction([
       prisma.invoice.findMany({
         where,
@@ -120,7 +110,6 @@ export async function listInvoices(req: Request, res: Response, next: NextFuncti
     });
 
   } catch (err) {
-    // Log error for debugging
     console.error('Error in listInvoices:', err);
     next(err);
   }
