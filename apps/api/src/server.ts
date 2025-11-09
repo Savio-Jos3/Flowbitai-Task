@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import router from './router';
+import { errorHandler } from './middleware/errorHandler';
 
 
 
@@ -31,3 +32,5 @@ app.use((err, req, res, next) => {
   console.error('Global error:', err);
   res.status(500).json({ error: 'Internal Server Error' });
 });
+
+app.use(errorHandler);

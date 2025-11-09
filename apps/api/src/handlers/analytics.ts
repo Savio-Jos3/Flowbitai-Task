@@ -15,17 +15,31 @@ export async function getCategorySpend(req: Request, res: Response, next: NextFu
 
 export async function getInvoiceTrends(req: Request, res: Response, next: NextFunction) {
   try {
-    const trends = await prisma.invoice.groupBy({
+    const data = await prisma.invoice.groupBy({
       by: ["invoiceDate"],
-      _count: { id: true },  // or your PK field name
+      _count: { id: true },
       _sum: { invoiceTotal: true }
     });
-    res.json(trends);
+    // Add JS grouping logic here!
+
+    // Group results by month (YYYY-MM)
+    const monthly = data.reduce((acc, row) => {
+      const date = new Date(row.invoiceDate);
+      const yearMonth = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2,'0')}`;
+      if (!acc[yearMonth]) acc[yearMonth] = { month: yearMonth, count: 0, sum: 0 };
+      acc[yearMonth].count += row._count.id;
+      acc[yearMonth].sum += row._sum.invoiceTotal || 0;
+      return acc;
+    }, {});
+    const monthlyTrends = Object.values(monthly);
+
+    res.json(monthlyTrends);
   } catch (err) {
     console.error(err);
     next(err);
   }
 }
+
 
 
 export async function getCashOutflow(req: Request, res: Response, next: NextFunction) {
