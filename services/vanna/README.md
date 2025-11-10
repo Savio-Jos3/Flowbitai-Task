@@ -72,3 +72,146 @@ Flowbit-Task/
 │     └─ .env                   # Database environment file
 ├─ services/
 │  └─ vanna/                    # Python AI service (Vanna)
+
+
+## ⚙️ Setup & Installation
+
+---
+
+### 🧩 Prerequisites
+
+- **PostgreSQL 13+** (local or Docker)
+- **Node.js 18+**
+- **pnpm** (or npm/yarn)
+- **Python 3.9+** for Vanna AI
+
+---
+
+### 🛠️ Steps
+
+#### 1️⃣ Install dependencies
+```bash
+pnpm install
+
+
+⚙️ Setup & Installation
+🛠️ Steps
+2️⃣ Start PostgreSQL (via Docker)
+cd data
+docker compose up -d
+
+3️⃣ Seed the Database
+pnpm tsx packages/db/prisma/seed.ts
+
+4️⃣ Run Backend & Frontend
+
+Backend
+
+pnpm --filter @flowbit/api dev
+
+
+Frontend
+
+pnpm --filter @flowbit/web dev
+
+5️⃣ Start the AI Service
+cd services/vanna
+python app.py
+
+🗄️ Database Setup
+
+Follow these commands for a full local setup:
+
+docker compose up -d
+pnpm tsx packages/db/prisma/seed.ts
+
+
+The .env file in packages/db must match the credentials in docker-compose.yml.
+It will create normalized tables and load data from Analytics_Test_Data.json.
+
+🧩 Default Connection Details
+Parameter	Value
+Host	localhost
+Port	5432
+User	postgres
+Password	postgres
+Database	flowbit
+📡 API Documentation
+
+Base URL: http://localhost:3001/api
+
+Method	Endpoint	Description
+GET	/stats	Retrieve dashboard summary metrics
+GET	/invoice-trends	Get monthly invoice trends
+GET	/vendors/top10	Top 10 vendors by spend
+GET	/category-spend	Spending breakdown by category
+GET	/cash-outflow	Forecasted outflow trends
+GET	/invoices	Searchable invoice list
+POST	/chat-with-data	AI natural language querying
+
+📄 See API.md for example responses and schema definitions.
+
+💬 Chat With Data Integration
+🧠 Architecture Flow
+
+Frontend chat UI captures user queries
+
+JWT-authenticated request sent to backend
+
+Backend securely proxies request to Vanna AI service
+
+Vanna AI:
+
+Reads schema
+
+Builds structured LLM prompt
+
+Uses Groq LLM for SQL generation
+
+Executes queries on PostgreSQL
+
+Frontend renders SQL + table/chart results in real time
+
+🔐 This design ensures data privacy and modular AI integration.
+
+🔒 Security & Authentication
+
+🔑 JWT-based authentication between frontend & backend
+
+🧱 Middleware-enforced route protection
+
+🧠 Internal-only access to Vanna AI service
+
+💾 Tokens securely stored and refreshed on the client side
+
+🚨 Error Handling
+
+⚠️ Graceful frontend error states (401, 404, 500)
+
+🧾 Unified backend error response schema
+
+🧩 Structured AI error logging and recovery
+
+💬 User-friendly messages for failed queries
+
+🤝 Contribution Guidelines
+
+Contributions are welcome! ❤️
+
+Fork the repository
+
+Create a feature branch
+
+Commit your changes
+
+Open a pull request
+
+Please follow existing coding conventions and linting setup.
+
+🐞 Found a bug? Open an issue with clear reproduction steps.
+
+📜 License
+
+This project is released under the MIT License.
+See the LICENSE
+ file for full terms.
