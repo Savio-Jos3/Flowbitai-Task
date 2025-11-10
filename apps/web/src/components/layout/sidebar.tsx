@@ -20,6 +20,11 @@ const menuItems = [
     icon: Home,
   },
   {
+    title: 'Chat with Data',
+    href: '/dashboard/chat',
+    icon: MessageSquare,
+  },
+  {
     title: 'Invoices',
     href: '/dashboard/invoice',
     icon: FileText,
@@ -43,11 +48,6 @@ const menuItems = [
     title: 'Settings',
     href: '/dashboard/settings',
     icon: Settings,
-  },
-  {
-    title: 'Chat with Data',
-    href: '/dashboard/chat',
-    icon: MessageSquare,
   },
 ];
 

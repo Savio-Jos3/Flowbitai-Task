@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:14.1-alpine  # Stable Postgres version
+    restart: always
+    environment:
+      POSTGRES_DB: flowbit_analytics         # default DB name
+      POSTGRES_USER: saviojosephsonny         # DB user
+      POSTGRES_PASSWORD: 1234   # DB password
+    ports:
+      - "5432:5432"                  # accessible locally
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d  # for seed .sql scripts
+volumes:
+  pgdata:
+    driver: local
