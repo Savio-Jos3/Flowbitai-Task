@@ -22,8 +22,8 @@ class QueryResponse(BaseModel):
     success: bool
     question: str
     sql: str = None
-    results: list = None
-    row_count: int = None
+    results: list = []
+    row_count: int = 0
     error: str = None
 
 @app.get("/")
@@ -44,10 +44,16 @@ def query_data(request: QueryRequest):
     
     result = vanna_service.ask(request.question)
     
-    if not result["success"]:
+    if not result.get("success"):
         raise HTTPException(status_code=500, detail=result.get("error", "Unknown error"))
     
-    return result
+    return QueryResponse(
+        success=result["success"],
+        question=result["question"],
+        sql=result.get("sql", ""),
+        results=result.get("results", []),
+        row_count=result.get("row_count", 0)
+    )
 
 if __name__ == "__main__":
     import uvicorn

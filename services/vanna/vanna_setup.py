@@ -1,161 +1,147 @@
 import os
-from vanna.remote import VannaDefault
 from dotenv import load_dotenv
+from urllib.parse import urlparse
+import psycopg2
+import pandas as pd
+from groq import Groq
 
 load_dotenv()
 
 class VannaService:
+    """Custom Vanna-like service using Groq for SQL generation"""
+    
     def __init__(self):
-        self.vn = VannaDefault(
-            model='groq/llama3-70b-8192',
-            api_key=os.getenv('GROQ_API_KEY')
-        )
+        groq_api_key = os.getenv('GROQ_API_KEY')
+        if not groq_api_key:
+            raise ValueError("GROQ_API_KEY not found")
         
-        # Connect to PostgreSQL
+        self.groq_client = Groq(api_key=groq_api_key)
+        
         db_url = os.getenv('DATABASE_URL')
-        self.vn.connect_to_postgres(
-            host=self._parse_db_host(db_url),
-            dbname=self._parse_db_name(db_url),
-            user=self._parse_db_user(db_url),
-            password=self._parse_db_password(db_url),
-            port=self._parse_db_port(db_url)
-        )
+        if not db_url:
+            raise ValueError("DATABASE_URL not found")
         
-        # Train Vanna on your schema
-        self.train_vanna()
-    
-    def _parse_db_host(self, url):
-        # Parse postgresql+psycopg://user:pass@host:port/dbname
-        return url.split('@')[1].split(':')[0]
-    
-    def _parse_db_name(self, url):
-        return url.split('/')[-1]
-    
-    def _parse_db_user(self, url):
-        return url.split('//')[1].split(':')[0]
-    
-    def _parse_db_password(self, url):
-        return url.split(':')[2].split('@')[0]
-    
-    def _parse_db_port(self, url):
-        return int(url.split(':')[-1].split('/')[0])
-    
-    def train_vanna(self):
-        """Train Vanna with your database schema"""
+        parsed = urlparse(db_url)
+        self.db_config = {
+            'host': parsed.hostname,
+            'database': parsed.path.lstrip('/'),
+            'user': parsed.username,
+            'password': parsed.password,
+            'port': parsed.port or 5432
+        }
         
-        # Add DDL statements for training
-        ddl_statements = [
-            """
-            CREATE TABLE "Invoice" (
-                id TEXT PRIMARY KEY,
-                invoiceNumber TEXT NOT NULL,
-                vendorId TEXT NOT NULL,
-                customerId TEXT NOT NULL,
-                invoiceDate TIMESTAMP,
-                deliveryDate TIMESTAMP,
-                invoiceTotal DECIMAL,
-                status TEXT,
-                documentId TEXT,
-                FOREIGN KEY (vendorId) REFERENCES "Vendor"(id),
-                FOREIGN KEY (customerId) REFERENCES "Customer"(id)
-            );
-            """,
-            """
-            CREATE TABLE "Vendor" (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                taxId TEXT,
-                address TEXT,
-                email TEXT,
-                partyNumber TEXT
-            );
-            """,
-            """
-            CREATE TABLE "Customer" (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                address TEXT,
-                email TEXT
-            );
-            """,
-            """
-            CREATE TABLE "LineItem" (
-                id TEXT PRIMARY KEY,
-                invoiceId TEXT NOT NULL,
-                description TEXT,
-                quantity DECIMAL,
-                unitPrice DECIMAL,
-                totalPrice DECIMAL,
-                sachkonto TEXT,
-                buschluessel TEXT,
-                FOREIGN KEY (invoiceId) REFERENCES "Invoice"(id)
-            );
-            """,
-            """
-            CREATE TABLE "Payment" (
-                id TEXT PRIMARY KEY,
-                invoiceId TEXT NOT NULL,
-                paymentDate TIMESTAMP,
-                amount DECIMAL,
-                bankAccount TEXT,
-                bic TEXT,
-                paymentTerms TEXT,
-                FOREIGN KEY (invoiceId) REFERENCES "Invoice"(id)
-            );
-            """
-        ]
+        self.schema_info = self._get_schema_info()
         
-        for ddl in ddl_statements:
-            self.vn.train(ddl=ddl)
+        print(f"✅ Connected to database: {self.db_config['database']}")
+        print(f"✅ Found tables: {', '.join(self.schema_info.keys())}")
+        print("✅ Vanna AI ready with Groq!")
+    
+    def _get_schema_info(self):
+        try:
+            conn = psycopg2.connect(**self.db_config)
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public'
+                ORDER BY table_name;
+            """)
+            tables = [row[0] for row in cursor.fetchall()]
+            
+            schema = {}
+            for table in tables:
+                cursor.execute(f"""
+                    SELECT column_name, data_type 
+                    FROM information_schema.columns 
+                    WHERE table_name = '{table}' 
+                    AND table_schema = 'public'
+                    ORDER BY ordinal_position;
+                """)
+                schema[table] = [f'"{col[0]}" ({col[1]})' for col in cursor.fetchall()]
+            
+            cursor.close()
+            conn.close()
+            return schema
+            
+        except Exception as e:
+            print(f"Warning: {str(e)}")
+            return {}
+    
+    def _build_context(self):
+        context = "PostgreSQL Database Schema:\n\n"
         
-        # Add example questions for better context
-        examples = [
-            {
-                "question": "What is the total spend in the last 90 days?",
-                "sql": """
-                SELECT SUM("invoiceTotal") as total_spend
-                FROM "Invoice"
-                WHERE "invoiceDate" >= NOW() - INTERVAL '90 days';
-                """
-            },
-            {
-                "question": "List top 5 vendors by spend",
-                "sql": """
-                SELECT v.name, SUM(i."invoiceTotal") as total_spend
-                FROM "Invoice" i
-                JOIN "Vendor" v ON i."vendorId" = v.id
-                GROUP BY v.name
-                ORDER BY total_spend DESC
-                LIMIT 5;
-                """
-            },
-            {
-                "question": "Show overdue invoices",
-                "sql": """
-                SELECT i."invoiceNumber", v.name as vendor, i."invoiceDate", i."invoiceTotal"
-                FROM "Invoice" i
-                JOIN "Vendor" v ON i."vendorId" = v.id
-                WHERE i.status != 'paid' AND i."deliveryDate" < NOW();
-                """
-            }
-        ]
+        for table, columns in self.schema_info.items():
+            context += f'Table: "{table}"\n'
+            context += "Columns:\n"
+            for col in columns:
+                context += f"  - {col}\n"
+            context += "\n"
         
-        for example in examples:
-            self.vn.train(question=example['question'], sql=example['sql'])
-        
-        print("✅ Vanna training completed!")
+        context += "Rules:\n1. Use double quotes for names\n2. Return only SQL\n"
+        return context
+    
+    def generate_sql(self, question: str) -> str:
+        system_context = self._build_context()
+    
+        prompt = f"""{system_context}
+
+    User Question: {question}
+
+    Generate PostgreSQL query. Return ONLY the SQL."""
+
+        try:
+            response = self.groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",  # ← CHANGED FROM llama3-70b-8192
+                messages=[
+                    {"role": "system", "content": "You are a PostgreSQL expert. Return only SQL queries."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.1,
+                max_tokens=500
+            )
+            
+            sql = response.choices[0].message.content.strip()
+            
+            # Remove markdown
+            if sql.count('`') >= 6:
+                parts = sql.split('`')
+                sql = parts[3] if len(parts) > 3 else sql
+                if sql.lower().startswith('sql'):
+                    sql = sql[3:]
+            
+            return sql.strip()
+            
+        except Exception as e:
+            raise Exception(f"SQL generation failed: {str(e)}")
+    
+    def run_sql(self, sql: str) -> pd.DataFrame:
+        try:
+            conn = psycopg2.connect(**self.db_config)
+            df = pd.read_sql_query(sql, conn)
+            conn.close()
+            return df
+        except Exception as e:
+            raise Exception(f"SQL execution failed: {str(e)}")
     
     def ask(self, question: str):
-        """Ask Vanna a question"""
         try:
-            # Generate SQL
-            sql = self.vn.generate_sql(question)
+            print(f"\n🤔 Question: {question}")
             
-            # Execute SQL
-            df = self.vn.run_sql(sql)
+            sql = self.generate_sql(question)
+            print(f"🔍 SQL:\n{sql}")
             
-            # Convert DataFrame to dict
+            if not sql:
+                return {
+                    "success": False,
+                    "error": "Could not generate SQL",
+                    "question": question
+                }
+            
+            df = self.run_sql(sql)
             results = df.to_dict('records')
+            
+            print(f"✅ Success: {len(results)} rows\n")
             
             return {
                 "success": True,
@@ -164,12 +150,14 @@ class VannaService:
                 "results": results,
                 "row_count": len(results)
             }
+            
         except Exception as e:
+            print(f"❌ Error: {str(e)}\n")
             return {
                 "success": False,
                 "error": str(e),
                 "question": question
             }
 
-# Create singleton instance
+print("🚀 Initializing Vanna Service...")
 vanna_service = VannaService()
