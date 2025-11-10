@@ -7,19 +7,19 @@ import { errorHandler } from './middleware/errorHandler';
 
 
 
-// Load environment variables from .env
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
-// Core middleware
-app.use(cors());            // Enable all CORS requests (for local dev; restrict in prod)
-app.use(express.json());    // Automatically parse incoming JSON
-app.use(morgan('dev'));    // Log all HTTP requests
-app.use('/api', router); // All endpoints start with /api
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));         
+app.use(express.json());   
+app.use(morgan('dev'));    
+app.use('/api', router); 
 
-// Health check route
 app.get('/', (_req, res) => {
   res.send('API Server running!');
 });

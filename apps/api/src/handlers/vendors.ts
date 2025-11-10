@@ -9,7 +9,6 @@ export async function getTopVendors(req: Request, res: Response, next: NextFunct
       orderBy: { _sum: { invoiceTotal: 'desc' } },
       take: 10,
     });
-    // Optionally join Vendor names in a follow-up query or map
     res.json(vendors);
   } catch (err) {
     next(err);

@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 
 export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
-  // Log the error for debugging
   console.error('Global error handler:', {
     message: err.message,
     stack: err.stack,
@@ -10,7 +9,6 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     method: req.method
   });
 
-  // Prisma-specific errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     switch (err.code) {
       case 'P2002':
@@ -40,7 +38,6 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     }
   }
 
-  // Prisma validation errors
   if (err instanceof Prisma.PrismaClientValidationError) {
     return res.status(400).json({
       success: false,
@@ -49,7 +46,6 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     });
   }
 
-  // JWT errors
   if (err.name === 'JsonWebTokenError') {
     return res.status(403).json({
       success: false,
@@ -66,7 +62,6 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     });
   }
 
-  // Default error response
   const statusCode = err.statusCode || err.status || 500;
   res.status(statusCode).json({
     success: false,

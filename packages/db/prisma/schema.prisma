@@ -92,11 +92,13 @@ model InvoiceSummary {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String   // hashed password
-  name      String?
-  role      String   @default("user") // e.g., "user", "admin"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(uuid())
+  email             String   @unique
+  password          String
+  name              String?
+  role              String   @default("user")
+  emailVerified     Boolean  @default(false)
+  verificationToken String?  @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
